@@ -1,6 +1,6 @@
 {
   "name": "react-native-web-auth-session",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Open a URL in the system auth browser (ASWebAuthenticationSession, Android Auth Tab) and get the callback URL back",
   "main": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
