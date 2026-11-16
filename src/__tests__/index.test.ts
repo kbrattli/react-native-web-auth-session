@@ -30,7 +30,7 @@ it('resolves with the callback URL', async () => {
     type: 'success',
     url: 'myapp://cb?code=a%2Bb',
   });
-  expect(mockNative).toHaveBeenCalledWith('https://a.test', 'myapp', false, null);
+  expect(mockNative).toHaveBeenCalledWith('https://a.test', 'myapp', false);
 });
 
 it.each([null, undefined])(
@@ -47,11 +47,8 @@ it('passes the options on', async () => {
   mockNative.mockResolvedValueOnce(null);
   await openAuthSession('https://a.test', 'myapp', {
     preferEphemeralSession: true,
-    browserPackages: ['com.android.chrome'],
   });
-  expect(mockNative).toHaveBeenCalledWith('https://a.test', 'myapp', true, [
-    'com.android.chrome',
-  ]);
+  expect(mockNative).toHaveBeenCalledWith('https://a.test', 'myapp', true);
 });
 
 it('joins an open session with the same url and scheme', async () => {

@@ -12,18 +12,11 @@ export type AuthSessionOptions = {
    * the system alert that asks the user to allow the app to sign in. Default false.
    */
   preferEphemeralSession?: boolean;
-  /**
-   * Android only. Package names of the browsers that may be used, in order of preference. The
-   * first installed one with Auth Tab is used, otherwise the first installed one, as a Custom
-   * Tab. If none is installed and enabled, the call rejects with NO_BROWSER. Default: every
-   * browser with Custom Tabs, the user's default browser first.
-   */
-  browserPackages?: string[];
 };
 
 /**
  * The `code` of an error that openAuthSession rejects with.
- * - NO_BROWSER: Android, no browser to use is installed and enabled.
+ * - NO_BROWSER: Android, no browser with Custom Tabs is installed and enabled.
  * - ALREADY_OPEN: another auth session is open.
  * - OPEN_FAILED: the browser could not be opened.
  */
@@ -39,8 +32,8 @@ let current: {
  * Opens url in the system's auth browser and resolves when the browser is sent to a URL with
  * callbackScheme (for example "myapp" for myapp://callback?code=…) or is closed.
  *
- * iOS uses ASWebAuthenticationSession. Android uses an Auth Tab where the browser has it, and a
- * Custom Tab otherwise. One session can be open at a time. A call with the same url and
+ * iOS uses ASWebAuthenticationSession. Android uses a Custom Tab, in Chrome if it is installed.
+ * One session can be open at a time. A call with the same url and
  * callbackScheme while it is open returns the same promise, so a component that mounts twice
  * (React StrictMode) doesn't open a second browser.
  */
@@ -61,8 +54,7 @@ export function openAuthSession(
   const result = NativeWebAuthSession.openAuthSession(
     url,
     callbackScheme,
-    options.preferEphemeralSession ?? false,
-    options.browserPackages ?? null
+    options.preferEphemeralSession ?? false
   )
     // iOS resolves a missing URL as undefined, Android as null.
     .then(

@@ -8,8 +8,7 @@ export interface Spec extends TurboModule {
   openAuthSession(
     url: string,
     callbackScheme: string,
-    preferEphemeralSession: boolean,
-    browserPackages: ReadonlyArray<string> | null
+    preferEphemeralSession: boolean
   ): Promise<string | null>;
 }
 

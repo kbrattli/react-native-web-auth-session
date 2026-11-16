@@ -28,7 +28,6 @@
 - (void)openAuthSession:(NSString *)url
           callbackScheme:(NSString *)callbackScheme
   preferEphemeralSession:(BOOL)preferEphemeralSession
-         browserPackages:(NSArray *)browserPackages
                  resolve:(RCTPromiseResolveBlock)resolve
                   reject:(RCTPromiseRejectBlock)reject
 {

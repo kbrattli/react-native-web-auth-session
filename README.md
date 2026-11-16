@@ -3,9 +3,9 @@
 Open a URL in the system's auth browser and get the callback URL back.
 
 - **iOS:** `ASWebAuthenticationSession`.
-- **Android:** an [Auth Tab](https://developer.chrome.com/docs/android/custom-tabs/guide-auth-tab) where the browser has one (Chrome 137+), and a Custom Tab otherwise. You choose which browsers may be used.
+- **Android:** a [Custom Tab](https://developer.chrome.com/docs/android/custom-tabs), in Chrome if it is installed and enabled, otherwise in the default browser, otherwise in any browser with Custom Tabs.
 
-An Auth Tab hands the redirect straight back to the app that opened it. That is more reliable than a Custom Tab for flows that redirect without a fresh tap from the user, for example a page that waits for approval in another app. In a Custom Tab, Chrome only opens an app without asking when the user's last tap was less than 15 seconds ago. After that, it shows a "Continue to …" prompt, which in Chrome 156 disappears by itself after about 12 seconds.
+The tab is opened with a Custom Tabs session, which tells the browser which app opened it. Chrome lets a redirect to that app through without a fresh tap from the user, for example from a page that waits for approval in another app. Without a session, Chrome only opens an app without asking when the user's last tap was less than 15 seconds ago. After that, it shows a "Continue to …" prompt, which in Chrome 156 disappears by itself after about 12 seconds.
 
 One function, no UI. Requires the New Architecture.
 
@@ -46,7 +46,7 @@ Rejects with an `Error` whose `code` is one of:
 
 | `code` | When |
 | --- | --- |
-| `NO_BROWSER` | Android: none of the allowed browsers is installed and enabled. |
+| `NO_BROWSER` | Android: no browser with Custom Tabs is installed and enabled. |
 | `ALREADY_OPEN` | Another session, with a different `url` or `callbackScheme`, is open. |
 | `OPEN_FAILED` | The browser could not be opened, for example because the app has no foreground activity. |
 
@@ -55,27 +55,10 @@ Rejects with an `Error` whose `code` is one of:
 | Option | Platform | Default | |
 | --- | --- | --- | --- |
 | `preferEphemeralSession` | iOS | `false` | Use a private session that shares no cookies with Safari. This also skips the system alert that asks the user to allow the app to sign in with the site. |
-| `browserPackages` | Android | every browser with Custom Tabs, the default browser first | Package names of the browsers that may be used, in order. The first installed one with Auth Tab is used, otherwise the first installed one, as a Custom Tab. |
-
-Use only Chrome, and report when it is missing:
-
-```ts
-try {
-  const result = await openAuthSession(url, 'myapp', {
-    browserPackages: ['com.android.chrome'],
-  });
-} catch (e) {
-  if ((e as { code?: string }).code === 'NO_BROWSER') {
-    // Chrome isn't installed or is turned off.
-  }
-}
-```
 
 ## Android setup
 
-**Auth Tab** needs no setup. The package declares the `<queries>` entry it needs to find browsers.
-
-**Custom Tab fallback** (Chrome before 137, and other browsers): the redirect reaches your app as a normal deep link. Add an intent filter for the scheme to `MainActivity`, which must have `launchMode="singleTask"` (the React Native template default). The redirect then closes the tab and the module picks up the URL.
+The redirect reaches your app as a normal deep link. Add an intent filter for the scheme to `MainActivity`, which must have `launchMode="singleTask"` (the React Native template default). The redirect then closes the tab and the module picks up the URL. The package declares the `<queries>` entry it needs to find browsers.
 
 ```xml
 <activity android:name=".MainActivity" android:launchMode="singleTask" ...>
@@ -88,7 +71,7 @@ try {
 </activity>
 ```
 
-In this path, React Native's `Linking` also receives the callback URL. Ignore it in your deep link handler, for example with React Navigation's `linking.filter`.
+React Native's `Linking` also receives the callback URL. Ignore it in your deep link handler, for example with React Navigation's `linking.filter`.
 
 ### Keep the browser open when the user taps the app icon
 
@@ -128,10 +111,11 @@ override fun invokeDefaultOnBackPressed() {
 
 ## Things to know
 
-- **The redirect needs the browser in the foreground on Android.** Chrome doesn't hand a redirect to an app, not even an Auth Tab result, while Chrome itself is in the background.
+- **Chrome is used when it is installed, also when it is not the default browser.** The redirect rule above is Chrome's. Other browsers may ask the user before they open the app, or not open it.
+- **The redirect needs the browser in the foreground on Android.** Chrome doesn't hand a redirect to an app while Chrome itself is in the background.
 - **If the app's activity is destroyed while the browser is open** (process death, "Don't keep activities"), the session resolves with `cancel` or never reaches JavaScript, and the callback URL is lost.
-- **Chrome's first-run screen** shows inside the Auth Tab when the user has never opened Chrome. Backing out of it resolves with `cancel`.
-- **Two installed apps with the same scheme** (debug and release builds): in a Custom Tab, Chrome may drop the redirect. Auth Tab is not affected. Use a different scheme per build.
+- **Chrome's first-run screen** shows inside the tab when the user has never opened Chrome. Backing out of it resolves with `cancel`.
+- **Two installed apps with the same scheme** (debug and release builds): Chrome sends the redirect to the app that opened the tab. Another browser may ask the user or drop the redirect. Use a different scheme per build.
 
 ## Example app
 

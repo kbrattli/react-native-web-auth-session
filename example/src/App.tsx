@@ -31,14 +31,6 @@ export default function App() {
       <Button title="Return at once" onPress={() => open(0)} />
       <Button title="Return after 20 s" onPress={() => open(20)} />
       <Button
-        title="Chrome only, after 20 s"
-        onPress={() => open(20, { browserPackages: ['com.android.chrome'] })}
-      />
-      <Button
-        title="Missing browser"
-        onPress={() => open(0, { browserPackages: ['com.example.missing'] })}
-      />
-      <Button
         title="Ephemeral (iOS)"
         onPress={() => open(0, { preferEphemeralSession: true })}
       />
