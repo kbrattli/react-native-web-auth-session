@@ -1,0 +1,14 @@
+{
+  "name": "react-native-web-auth-session",
+  "version": "0.2.0",
+  "private": true,
+  "main": "src/index.ts",
+  "codegenConfig": {
+    "name": "WebAuthSessionSpec",
+    "type": "modules",
+    "jsSrcsDir": "src",
+    "android": {
+      "javaPackageName": "com.webauthsession"
+    }
+  }
+}
