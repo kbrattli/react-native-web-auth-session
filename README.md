@@ -16,6 +16,8 @@ npm install react-native-web-auth-session
 cd ios && pod install
 ```
 
+Then follow the [Android setup](#android-setup). With Expo, see [Expo](#expo) instead.
+
 ## Use
 
 ```ts
@@ -77,23 +79,14 @@ React Native's `Linking` also receives the callback URL. Ignore it in your deep 
 
 The browser runs in your app's task, above `MainActivity`. With `singleTask`, tapping the app icon delivers an intent to `MainActivity`, which closes everything above it, including the browser. The session then resolves with `cancel`. That matters when the user has to leave the browser during the flow, for example to approve in another app, and comes back through the app icon.
 
-To avoid it, let a small activity take the launcher intent. It starts `MainActivity` only on a cold start or when the launch carries data (a notification tap). Otherwise it finishes, and the task comes forward as it was.
+To avoid it, let the package's `LauncherActivity` take the launcher intent. It starts `MainActivity` only on a cold start or when the launch carries data (a notification tap). Otherwise it finishes, and the task comes forward as it was.
 
-```kotlin
-class LauncherActivity : Activity() {
-  override fun onCreate(savedInstanceState: Bundle?) {
-    super.onCreate(savedInstanceState)
-    if (isTaskRoot || intent.extras != null || intent.data != null) {
-      startActivity(Intent(intent).setClass(this, MainActivity::class.java))
-    }
-    finish()
-  }
-}
-```
+Name `MainActivity` in its meta-data, by fully qualified class name. Give it the same theme as `MainActivity`: its window is the one that shows while the app starts, which on Android 12+ is the splash screen.
 
 ```xml
 <!-- Move the MAIN/LAUNCHER intent filter from MainActivity to here. -->
-<activity android:name=".LauncherActivity" android:exported="true" android:theme="@style/AppTheme">
+<activity android:name="com.webauthsession.LauncherActivity" android:exported="true" android:theme="@style/AppTheme">
+  <meta-data android:name="com.webauthsession.MAIN_ACTIVITY" android:value="com.myapp.MainActivity" />
   <intent-filter>
     <action android:name="android.intent.action.MAIN" />
     <category android:name="android.intent.category.LAUNCHER" />
@@ -108,6 +101,40 @@ override fun invokeDefaultOnBackPressed() {
   if (!moveTaskToBack(false)) super.invokeDefaultOnBackPressed()
 }
 ```
+
+With Expo, the [config plugin](#config-plugin) does all of this.
+
+## Expo
+
+Needs Expo SDK 52 or later, in a [development build](https://docs.expo.dev/develop/development-builds/introduction/). It doesn't run in Expo Go.
+
+```sh
+npx expo install react-native-web-auth-session
+```
+
+Use the app's `scheme` from app.json as the `callbackScheme`. iOS needs nothing else, and neither does the Android flow: `scheme` adds the intent filter from the [Android setup](#android-setup), and Expo's `MainActivity` is `singleTask` already. To use another callback scheme, list both: `"scheme": ["myapp", "myapp-auth"]`.
+
+Expo Router also gets the callback URL on Android and navigates to it, which shows the not-found screen. Ignore it in `+native-intent.tsx`, next to the root `_layout.tsx`:
+
+```ts
+export function redirectSystemPath({ path }: { path: string; initial: boolean }) {
+  return path.startsWith('myapp://callback') ? null : path;
+}
+```
+
+### Config plugin
+
+The plugin makes the changes from [Keep the browser open when the user taps the app icon](#keep-the-browser-open-when-the-user-taps-the-app-icon) at prebuild. It does nothing unless you turn it on:
+
+```json
+{
+  "expo": {
+    "plugins": [["react-native-web-auth-session", { "launcherActivity": true }]]
+  }
+}
+```
+
+It moves the launcher intent filter from `MainActivity` to `LauncherActivity`, gives `LauncherActivity` the theme and orientation of `MainActivity`, and replaces the `invokeDefaultOnBackPressed` override in `MainActivity.kt`. That changes how every launch of the app starts, not only sign-in, so turn it on only when users have to leave the browser during sign-in.
 
 ## Things to know
 

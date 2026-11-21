@@ -28,9 +28,12 @@
       </activity>
       <!-- The app icon starts here, so it doesn't close the browser. -->
       <activity
-        android:name=".LauncherActivity"
+        android:name="com.webauthsession.LauncherActivity"
         android:exported="true"
         android:theme="@style/AppTheme">
+        <meta-data
+            android:name="com.webauthsession.MAIN_ACTIVITY"
+            android:value="webauthsession.example.MainActivity" />
         <intent-filter>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
