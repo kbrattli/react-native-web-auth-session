@@ -71,15 +71,16 @@ class WebAuthSessionModule(context: ReactApplicationContext) :
     }
   }
 
-  // Chrome first: its redirect rules are the ones this flow relies on. Otherwise the default
-  // browser, then any browser with Custom Tabs.
+  // The default browser first: Android opens the user's links in it, so it is already set up.
+  // Otherwise Chrome, then any browser with Custom Tabs.
   private fun pickBrowser(): String? {
     val context = reactApplicationContext
     val installed = context.packageManager
       .queryIntentServices(Intent(CustomTabsService.ACTION_CUSTOM_TABS_CONNECTION), 0)
       .map { it.serviceInfo.packageName }
+    // Null when the default browser has no Custom Tabs, or no default is set.
     val default = CustomTabsClient.getPackageName(context, null)
-    return listOfNotNull("com.android.chrome", default).firstOrNull { it in installed }
+    return listOfNotNull(default, "com.android.chrome").firstOrNull { it in installed }
       ?: installed.firstOrNull()
   }
 

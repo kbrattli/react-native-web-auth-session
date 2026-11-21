@@ -3,9 +3,9 @@
 Open a URL in the system's auth browser and get the callback URL back.
 
 - **iOS:** `ASWebAuthenticationSession`.
-- **Android:** a [Custom Tab](https://developer.chrome.com/docs/android/custom-tabs), in Chrome if it is installed and enabled, otherwise in the default browser, otherwise in any browser with Custom Tabs.
+- **Android:** a [Custom Tab](https://developer.chrome.com/docs/android/custom-tabs) in the user's default browser if it supports Custom Tabs, otherwise in Chrome, otherwise in any browser with Custom Tabs. The default browser is the one the user's links already open in.
 
-The tab is opened with a Custom Tabs session, which tells the browser which app opened it. Chrome lets a redirect to that app through without a fresh tap from the user, for example from a page that waits for approval in another app. Without a session, Chrome only opens an app without asking when the user's last tap was less than 15 seconds ago. After that, it shows a "Continue to …" prompt, which in Chrome 156 disappears by itself after about 12 seconds.
+The tab is opened with a Custom Tabs session, which tells the browser which app opened it. Chrome lets a redirect to that app through without a fresh tap from the user, for example from a page that waits for approval in another app. Firefox, Brave and DuckDuckGo did the same in tests. Without a session, Chrome only opens an app without asking when the user's last tap was less than 15 seconds ago. After that, it shows a "Continue to …" prompt, which in Chrome 156 disappears by itself after about 12 seconds.
 
 One function, no UI. Requires the New Architecture (React Native 0.76 or later, Expo SDK 52 or later).
 
@@ -113,6 +113,8 @@ Resolves with:
 - `{ type: 'success', url }`: the browser reached the callback. `url` is the full callback URL.
 - `{ type: 'cancel' }`: the browser closed without reaching it.
 
+A `cancel` only means the app didn't get the callback URL. The user may have finished on the site and closed the browser before its last redirect, or the browser may have dropped that redirect (see [Things to know](#things-to-know)). If the flow changes something on a server, such as a payment or a consent, ask your server for the outcome after a `cancel`.
+
 Only one session can be open at a time. Calling again with the same `url` and `callbackScheme` while that session is open returns the same promise. So a component that mounts twice (React StrictMode) doesn't open a second browser.
 
 Rejects with an `Error` whose `code` is one of:
@@ -175,10 +177,11 @@ At prebuild, the plugin moves the launcher intent filter from `MainActivity` to 
 
 ## Things to know
 
-- **Chrome is used when it is installed, also when it is not the default browser.** The redirect rule above is Chrome's. Other browsers may ask the user before they open the app, or not open it.
-- **The redirect needs the browser in the foreground on Android.** Chrome doesn't hand a redirect to an app while Chrome itself is in the background.
+- **The user's default browser is used when it supports Custom Tabs.** Chrome, Firefox, Brave and DuckDuckGo were tested. A browser that wasn't tested may ask the user before it opens the app, or not open it.
+- **A redirect that arrives while the browser is in the background can be lost on Android.** Chrome, Brave and DuckDuckGo don't hand a redirect to an app while they are in the background. The tab stays on the old page, and closing it resolves with `cancel`. Firefox delivered the redirect in tests.
+- **Let a tap start the last redirect if you can.** A redirect that follows a tap in a visible tab reached the app in every browser tested. One that fires by itself can arrive while the user is in another app, and most browsers drop it then.
 - **If the app's activity is destroyed while the browser is open** (process death, "Don't keep activities"), the session resolves with `cancel` or never reaches JavaScript, and the callback URL is lost.
-- **Chrome's first-run screen** shows inside the tab when the user has never opened Chrome. Backing out of it resolves with `cancel`.
+- **A browser's first-run screen** shows inside the tab when the user has never opened that browser, for example Chrome when it is the fallback. Backing out of it resolves with `cancel`.
 - **Two installed apps with the same scheme** (debug and release builds): Chrome sends the redirect to the app that opened the tab. Another browser may ask the user or drop the redirect. Use a different scheme per build.
 
 ## Example app

@@ -32,7 +32,8 @@ let current: {
  * Opens url in the system's auth browser and resolves when the browser is sent to a URL with
  * callbackScheme (for example "myapp" for myapp://callback?code=…) or is closed.
  *
- * iOS uses ASWebAuthenticationSession. Android uses a Custom Tab, in Chrome if it is installed.
+ * iOS uses ASWebAuthenticationSession. Android uses a Custom Tab, in the default browser if it
+ * supports Custom Tabs, otherwise in Chrome, otherwise in any browser with Custom Tabs.
  * One session can be open at a time. A call with the same url and
  * callbackScheme while it is open returns the same promise, so a component that mounts twice
  * (React StrictMode) doesn't open a second browser.
